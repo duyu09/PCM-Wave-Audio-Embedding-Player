@@ -1,6 +1,6 @@
 /*
-Copyright (c) 2023~2024 DuYu (@Duyu09, qluduyu09@163.com), Faculty of Computer Science and Technology, Qilu University of Technology (Shandong Academy of Sciences).
-CPP Source code of Duyu PCM-WAVE-AUDIO-EMBEDDING PLAYER (PAEP) v1.0.0.
+Copyright (c) 2023~2025 DuYu (@Duyu09, qluduyu09@163.com), Lanzhou Jiaotong University.
+CPP Source code of Duyu PCM-WAVE-AUDIO-EMBEDDING PLAYER (PAEP) v2.0.0.
 This file is an important part of PAEP.
 */
 
@@ -10,8 +10,18 @@ This file is an important part of PAEP.
 #include <algorithm>
 
 using namespace std;
-#define BUFFER_SIZE 16384000
-short buffer[BUFFER_SIZE];
+
+#define NUM_BUFFERS 4
+#define BUFFER_SIZE 40960  // 减小单个缓冲区大小，增加响应性
+
+// 全局变量
+short buffers[NUM_BUFFERS][BUFFER_SIZE];
+WAVEHDR waveHeaders[NUM_BUFFERS];
+volatile bool bufferInUse[NUM_BUFFERS] = {false};
+char *da_ptr = nullptr;
+char *da_tail_ptr = nullptr;
+volatile bool isPlaying = false;
+HWAVEOUT global_hWaveOut = nullptr;
 
 extern "C" {
 	extern const char embedded_data[];
@@ -19,10 +29,6 @@ extern "C" {
 	extern const char embedded_audio_name[];
 }
 
-int arrlen = embedded_data_size;
-char *dataArr = (char *) embedded_data;
-char *da_ptr = dataArr;
-char *da_tail_ptr = da_ptr + arrlen - 1;
 typedef struct {
 	char chunkID[4];
 	unsigned int chunkSize;
@@ -39,8 +45,17 @@ typedef struct {
 	unsigned int subchunk2Size;
 } WavHeader;
 
+// 安全的回调函数
 void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
-	// A callback function that executes when an audio event needs to be handled can be left blank.
+	if (uMsg == WOM_DONE && isPlaying) {
+		WAVEHDR* hdr = (WAVEHDR*)dwParam1;
+		if (hdr && (hdr->dwFlags & WHDR_PREPARED)) {
+			int bufferIndex = (int)hdr->dwUser;
+			if (bufferIndex >= 0 && bufferIndex < NUM_BUFFERS) {
+				bufferInUse[bufferIndex] = false;
+			}
+		}
+	}
 }
 
 void printDeviceInfo() {
@@ -52,11 +67,10 @@ void printDeviceInfo() {
 		WAVEOUTCAPS waveOutCaps;
 		MMRESULT result = waveOutGetDevCaps(i, &waveOutCaps, sizeof(WAVEOUTCAPS));
 		if (result == MMSYSERR_NOERROR) {
-			printf("Device: %s  Version: %d.%d\n", waveOutCaps.szPname, HIBYTE(waveOutCaps.vDriverVersion),
-				LOBYTE(waveOutCaps.vDriverVersion));
-			// More device information, such as supported formats, can be printed.
+			printf("Device: %s  Version: %d.%d\n", waveOutCaps.szPname, 
+				HIBYTE(waveOutCaps.vDriverVersion), LOBYTE(waveOutCaps.vDriverVersion));
 		} else {
-			printf("Failed to get device information.\n");
+			printf("Failed to get device information for device %d.\n", i);
 		}
 	}
 	printf("\n");
@@ -72,49 +86,89 @@ void printAudioInfo(WavHeader wavheader) {
 }
 
 void printCopyrightInfo() {
-	printf("PCM-AUDIO-EMBEDDING PLAYER v1.0\n\n");
-	printf("Copyright (c) 2024 DuYu (@Duyu09), Faculty of Computer Science and Technology, Qilu University of Technology (Shandong Academy of Sciences).\n");
+	printf("PCM-AUDIO-EMBEDDING PLAYER v2.0\n\n");
+	printf("Copyright (c) 2023~2025 DuYu (@Duyu09), Lanzhou Jiaotong University.\n");
 	printf("\n");
 }
 
-int def_memcpy(short *dst, char *src, int size, const char *tail_ptr) {
-	int bs = 0;
+// 安全的数据拷贝函数
+int safe_memcpy(short *dst, char *src, int size, const char *tail_ptr) {
+	if (!dst || !src || !tail_ptr) return 0;
+	
 	ptrdiff_t diff_d = tail_ptr - src;
-	int diff = (int) diff_d;
-	if (diff <= 0) return 0;
-	if (BUFFER_SIZE > diff) { bs = diff; }
-	else { bs = BUFFER_SIZE; }
-	memcpy(dst, src, bs);
-	return bs;
+	if (diff_d <= 0) return 0;
+	
+	int bytes_to_copy = min((int)diff_d, size);
+	bytes_to_copy = min(bytes_to_copy, BUFFER_SIZE);
+	
+	// 确保不会拷贝超出数据范围
+	if (bytes_to_copy > 0) {
+		memcpy(dst, src, bytes_to_copy);
+	}
+	
+	return bytes_to_copy;
+}
+
+// 安全的清理函数
+void safeCleanup(HWAVEOUT hWaveOut) {
+	if (hWaveOut) {
+		// 先停止播放
+		waveOutReset(hWaveOut);
+		
+		// 清理所有缓冲区头
+		for (int i = 0; i < NUM_BUFFERS; i++) {
+			if (waveHeaders[i].dwFlags & WHDR_PREPARED) {
+				waveOutUnprepareHeader(hWaveOut, &waveHeaders[i], sizeof(WAVEHDR));
+			}
+		}
+		
+		// 关闭设备
+		waveOutClose(hWaveOut);
+	}
 }
 
 int main(int argc, char *argv[]) {
 	printCopyrightInfo();
 	printDeviceInfo();
-	if (dataArr == nullptr) {
-		printf("ERROR: FAILED GET AUDIO DATA!\n");
+	
+	// 安全检查嵌入式数据
+	if (embedded_data == nullptr || embedded_data_size == 0) {
+		printf("ERROR: FAILED TO GET AUDIO DATA OR DATA IS EMPTY!\n");
+		return 1;
+	}
+	
+	int arrlen = embedded_data_size;
+	char *dataArr = (char *)embedded_data;
+	da_ptr = dataArr;
+	da_tail_ptr = da_ptr + arrlen - 1;
+	
+	// 检查WAV文件头
+	if (arrlen < sizeof(WavHeader)) {
+		printf("ERROR: AUDIO DATA TOO SMALL TO CONTAIN VALID WAV HEADER!\n");
 		return 1;
 	}
 	
 	WavHeader header;
 	memcpy(&header, da_ptr, sizeof(header));
 	da_ptr += sizeof(header);
+	
 	printAudioInfo(header);
 	
+	// 验证WAV格式
 	if (memcmp(header.chunkID, "RIFF", 4) != 0 ||
 		memcmp(header.format, "WAVE", 4) != 0 ||
-		memcmp(header.subchunk1ID, "fmt ", 4) != 0)
-		// memcmp(header.subchunk2ID, "data", 4) != 0)
-	{
-		printf("ERROR: UNKNOWN FORMAT!\n");
+		memcmp(header.subchunk1ID, "fmt ", 4) != 0) {
+		printf("ERROR: UNKNOWN OR INVALID WAV FORMAT!\n");
 		return EXIT_FAILURE;
 	}
 	
+	// 只支持16位PCM
 	if (header.bitsPerSample != 16) {
-		printf("ERROR: Sorry, this version of player only support 16-bit PCM wave audio.\n");
+		printf("ERROR: Sorry, this version only supports 16-bit PCM wave audio.\n");
 		return EXIT_FAILURE;
 	}
 	
+	// 初始化音频设备
 	HWAVEOUT hWaveOut;
 	WAVEFORMATEX wfx;
 	
@@ -126,45 +180,120 @@ int main(int argc, char *argv[]) {
 	wfx.wBitsPerSample = header.bitsPerSample;
 	wfx.cbSize = 0;
 	
-	if (waveOutOpen(&hWaveOut, WAVE_MAPPER, &wfx, (DWORD_PTR) waveOutProc, 0, CALLBACK_FUNCTION) != MMSYSERR_NOERROR) {
-		//if (waveOutOpen(&hWaveOut, WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, 0, CALLBACK_FUNCTION) != MMSYSERR_NOERROR) {
-		printf("ERROR: CANNOT OPEN AUDIO DEVICE!\n");
+	MMRESULT result = waveOutOpen(&hWaveOut, WAVE_MAPPER, &wfx, 
+		(DWORD_PTR)waveOutProc, 0, CALLBACK_FUNCTION);
+	if (result != MMSYSERR_NOERROR) {
+		printf("ERROR: CANNOT OPEN AUDIO DEVICE! Error code: %d\n", result);
 		return EXIT_FAILURE;
 	}
 	
-//	DWORD newPitch=100;
-//	MMRESULT r=waveOutSetPitch(hWaveOut, newPitch);
+	global_hWaveOut = hWaveOut;
+	isPlaying = true;
+	
+	// 初始化所有缓冲区
+	printf("Initializing %d audio buffers...\n", NUM_BUFFERS);
+	for (int i = 0; i < NUM_BUFFERS; i++) {
+		memset(&waveHeaders[i], 0, sizeof(WAVEHDR));
+		waveHeaders[i].lpData = (LPSTR)buffers[i];
+		waveHeaders[i].dwBufferLength = 0;
+		waveHeaders[i].dwUser = i;  // 存储缓冲区索引
+		
+		result = waveOutPrepareHeader(hWaveOut, &waveHeaders[i], sizeof(WAVEHDR));
+		if (result != MMSYSERR_NOERROR) {
+			printf("ERROR: Failed to prepare buffer header %d. Error: %d\n", i, result);
+			safeCleanup(hWaveOut);
+			return EXIT_FAILURE;
+		}
+		bufferInUse[i] = false;
+	}
+	
+	printf("PLAYING...\n");
+	printf("Press Ctrl+C to stop playback.\n\n");
 	
 	int frameCounter = 1;
-	printf("PLAYING...\n");
-	while (true) {
-		int bs = def_memcpy(buffer, da_ptr, BUFFER_SIZE, da_tail_ptr);
-		if (bs < BUFFER_SIZE) {
-			bs = max(0, bs - 6144);
-		}
-		if (bs <= 0) {
-			break;
-		}
-		printf("Frame %d: %d Bytes.\n", frameCounter, bs);
-		++frameCounter;
-		da_ptr += bs;
-		WAVEHDR WaveHdr;
-		WaveHdr.lpData = (LPSTR) buffer;
-		WaveHdr.dwBufferLength = bs;
-		WaveHdr.dwBytesRecorded = 0;
-		WaveHdr.dwUser = 0;
-		WaveHdr.dwFlags = 0;
-		WaveHdr.dwLoops = 0;
+	bool hasData = true;
+	
+	// 主播放循环
+	while (hasData && isPlaying) {
+		bool submittedData = false;
 		
-		waveOutPrepareHeader(hWaveOut, &WaveHdr, sizeof(WAVEHDR));
-		waveOutWrite(hWaveOut, &WaveHdr, sizeof(WAVEHDR));
+		for (int i = 0; i < NUM_BUFFERS && hasData; i++) {
+			if (!bufferInUse[i]) {
+				// 填充可用缓冲区
+				int bytes_copied = safe_memcpy(buffers[i], da_ptr, BUFFER_SIZE, da_tail_ptr);
+				
+				if (bytes_copied > 0) {
+					waveHeaders[i].dwBufferLength = bytes_copied;
+					
+					result = waveOutWrite(hWaveOut, &waveHeaders[i], sizeof(WAVEHDR));
+					if (result == MMSYSERR_NOERROR) {
+						bufferInUse[i] = true;
+						da_ptr += bytes_copied;
+						printf("Frame %d (buffer %d): %d bytes\r", frameCounter++, i, bytes_copied);
+						fflush(stdout);
+						submittedData = true;
+					} else {
+						printf("ERROR: Failed to write to buffer %d. Error: %d\n", i, result);
+						bufferInUse[i] = false;
+					}
+				} else {
+					hasData = false;  // 没有更多数据
+				}
+			}
+		}
 		
-		while (waveOutUnprepareHeader(hWaveOut, &WaveHdr, sizeof(WAVEHDR)) == WAVERR_STILLPLAYING) {
-			Sleep(16);
+		if (!submittedData) {
+			// 没有提交新数据，短暂休眠避免CPU占用过高
+			Sleep(1);
+		}
+		
+		// 检查是否所有数据都已播放完毕
+		if (!hasData) {
+			bool stillPlaying = false;
+			for (int i = 0; i < NUM_BUFFERS; i++) {
+				if (bufferInUse[i]) {
+					stillPlaying = true;
+					break;
+				}
+			}
+			if (!stillPlaying) {
+				break;  // 所有缓冲区都已播放完毕且无新数据
+			}
 		}
 	}
-	waveOutClose(hWaveOut);
+	
+	printf("\n\nPlayback finished.\n");
+	
+	// 等待所有缓冲区播放完毕
+	printf("Waiting for buffers to finish...\n");
+	bool stillPlaying;
+	int waitCount = 0;
+	const int MAX_WAIT = 500; // 最多等待5秒
+	
+	do {
+		stillPlaying = false;
+		for (int i = 0; i < NUM_BUFFERS; i++) {
+			if (bufferInUse[i]) {
+				stillPlaying = true;
+				break;
+			}
+		}
+		if (stillPlaying) {
+			Sleep(10);
+			waitCount++;
+			if (waitCount > MAX_WAIT) {
+				printf("Timeout waiting for playback to finish.\n");
+				break;
+			}
+		}
+	} while (stillPlaying);
+	
+	// 安全清理
+	isPlaying = false;
+	safeCleanup(hWaveOut);
+	global_hWaveOut = nullptr;
+	
+	printf("Playback completed successfully.\n");
 	return 0;
 }
-
 

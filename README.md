@@ -1,6 +1,6 @@
 <p align="center">
   <br>
-  <img alt="paep_logo" src="./paep_logo.png" style="width:33%;">
+  <img alt="paep_logo" src="./paep_logo.png" style="width:25%;">
 </p>
 <br>
 
@@ -22,8 +22,7 @@
 
 ## 著作权声明
 
-- PAEP Environment: Copyright © 2023~2024 DuYu (@Duyu09, qluduyu09@163.com), Faculty of Computer Science & Technology, Qilu University of Technology (Shandong Academy of Sciences).
-- 按照相关开源协议，使用了开源软件FFMPEG以及GCC。
+- Copyright © 2023~2025 DuYu (@Duyu09, qluduyu09@163.com), School of Electronic and Information Engineering, Lanzhou Jiaotong University.
 - 本软件的Logo由百度的文心一言生成，后期有修改。特此声明。
 
 ## 运行说明
@@ -72,9 +71,11 @@ start build_with_nuitka.bat
  
 ## 友情链接
 
-- 齐鲁工业大学(山东省科学院) 计算机科学与技术学部 http://jsxb.scsc.cn/
+- 兰州交通大学 https://www.lzjtu.edu.cn/
+- 兰州交通大学电子与信息工程学院 https://dxxy.lzjtu.edu.cn/
+- 齐鲁工业大学 (山东省科学院) 计算机科学与技术学部 http://jsxb.scsc.cn/
 - 山东省计算中心 (国家超级计算济南中心) https://www.nsccjn.cn/
 - DuYu的课题组主页 https://faculty.lzjtu.edu.cn/chenmei/zh_CN/xsxx/2554/content/1837.htm
 - DuYu的GitHub网站 https://github.com/duyu09/
 
-> 
+> GIỮ VỮNG TÂM ĐẦU, KIÊN ĐỊNH CHÍ HƯỚNG

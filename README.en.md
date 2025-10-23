@@ -24,8 +24,18 @@ PCM Wave Audio Embedding Player Compilation and Generation Environment (_PAEP_)
 
 ## Instructions for Use
 
-Version v2.0.0 of PAEP requires no external dependencies. Simply download the released executable file and run it directly.
-Download link for the release: [https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+> ⚠️ **Note:** To optimize the executable file size of the release version, the program itself and its embedded components have been compressed using `UPX` during the build process. Therefore, some antivirus software may mistakenly report it as a virus. Please feel free to ignore such warnings.
+
+Version **PAEP v2.0.0** is fully self-contained and does not depend on any external runtime environment. After downloading the executable file from the release package, you can run it directly.
+
+* **Software release download link:**
+  [https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+
+* **Demonstration File 1:** [DEMO_Quynh-Trang_Phan-Ma-Hong.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Phan-Ma-Hong.exe)
+  Demonstration file featuring Vietnamese singer **Quỳnh Trang** performing _**Phận Má Hồng**_ (Chinese: _《红颜薄命》_; English: _The Fate of a Beauty_), source: [https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
+
+* **Demonstration File 2:** [DEMO_Quynh-Trang_Duyen-Phan.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Duyen-Phan.exe)
+  Demonstration file featuring Vietnamese singer **Quỳnh Trang** performing _**Duyên Phận**_ (Chinese: _《缘分》_; English: _Fate_), source: [https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
 
 ## Build Instructions
 

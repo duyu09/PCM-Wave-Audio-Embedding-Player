@@ -24,8 +24,16 @@ Môi Trường Biên Dịch và Tạo Trình Phát Nhúng Âm Thanh Xung PCM (_P
 
 ## Hướng Dẫn Chạy Phần Mềm
 
-Phiên bản **v2.0.0** của PAEP không yêu cầu bất kỳ môi trường phụ thuộc nào. Sau khi tải tệp thực thi trong bản phát hành, chỉ cần chạy trực tiếp là được.
-Địa chỉ tải bản phát hành: [https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+> ⚠️ **Lưu ý:** Để tối ưu kích thước của tệp thực thi trong bản phát hành, chương trình và các thành phần nhúng bên trong đã được nén bằng công cụ `UPX` trong quá trình biên dịch. Do đó, một số phần mềm diệt virus có thể nhận nhầm là có mã độc. Bạn có thể yên tâm bỏ qua cảnh báo này.
+
+Phiên bản **PAEP v2.0.0** không cần bất kỳ môi trường phụ thuộc nào khác. Sau khi tải về tệp thực thi trong bản phát hành, bạn có thể chạy trực tiếp.
+
+* **Liên kết tải bản phát hành phần mềm:**
+  [https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+
+* **Tệp mẫu 1:** [DEMO_Quynh-Trang_Phan-Ma-Hong.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Phan-Ma-Hong.exe) Tệp minh họa, ca sĩ Việt Nam **Quỳnh Trang** với bài hát _Phận Má Hồng_ (Tiếng Trung: _《红颜薄命》_; Tiếng Anh: _The Fate of a Beauty_), nguồn: [https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
+
+* **Tệp mẫu 2:** [DEMO_Quynh-Trang_Duyen-Phan.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Duyen-Phan.exe) Tệp minh họa, ca sĩ Việt Nam **Quỳnh Trang** với bài hát _Duyên Phận_ (Tiếng Trung: _《缘分》_; Tiếng Anh: _Fate_), nguồn: [https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
 
 ## Các Bước Tự Xây Dựng
 

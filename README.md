@@ -24,7 +24,15 @@
 
 ## 运行说明
 
-v2.0.0版本的PAEP软件无需依赖任何外部环境，下载发行版可执行文件后，直接运行即可。发行版下载地址：[https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+> ⚠️请注意：为优化发行版可执行文件体积，构建时对其本身以及其中嵌入的各部件均先经过了`UPX`压缩处理，故某些杀毒软件可能会误报病毒，请放心忽略即可。
+
+v2.0.0版本的PAEP软件无需依赖任何外部环境，下载发行版可执行文件后，直接运行即可。
+
+- **软件发行版下载地址：** [https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/paep_v2.0.0_windows_x86-64.exe)
+
+- **示例文件1：** [DEMO_Quynh-Trang_Phan-Ma-Hong.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Phan-Ma-Hong.exe)：示例文件，越南歌手琼庄 (越南语：_Quỳnh Trang_)的 _Phận Má Hồng_ (简体中文：_《红颜薄命》_；英语：_The Fate of a Beauty_)，来源：[https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
+
+- **示例文件2：** [DEMO_Quynh-Trang_Duyen-Phan.exe](https://github.com/duyu09/PCM-Wave-Audio-Embedding-Player/releases/download/PAEP_v2.0/DEMO_Quynh-Trang_Duyen-Phan.exe)：示例文件，越南歌手琼庄 (越南语：_Quỳnh Trang_)的 _Duyên Phận_ (简体中文：_《缘分》_；英语：_Fate_)，来源：[https://www.youtube.com/watch?v=OJbute1QYvg](https://www.youtube.com/watch?v=OJbute1QYvg)
 
 ## 自行构建步骤
 
